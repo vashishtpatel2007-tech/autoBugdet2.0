@@ -4,54 +4,63 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { useRouter } from "next/navigation";
 
-export default function SignupPage() {
+export default function SignUpPage() {
   const router = useRouter();
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
 
-  const handleSignup = async () => {
-    const { data, error } = await supabase.auth.signUp({
+  const signup = async () => {
+    setErrorMsg("");
+
+    const { error } = await supabase.auth.signUp({
       email,
       password,
     });
 
     if (error) {
-      setMessage(error.message);
-    } else {
-      setMessage("Signup successful! Check your email.");
-      router.push("/auth/login");
+      setErrorMsg(error.message);
+      return;
     }
+
+    router.push("/auth/login"); // after signup redirect to login
   };
 
   return (
-    <div className="p-6 max-w-md mx-auto mt-10 text-white">
-      <h1 className="text-2xl font-bold mb-4">Create Account</h1>
+    <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="w-full max-w-md bg-[#0e1118] p-6 rounded-xl border border-gray-700">
+        <h1 className="text-2xl mb-6 font-semibold text-center">Sign Up</h1>
 
-      <input
-        type="email"
-        placeholder="Email"
-        className="w-full p-2 mb-3 rounded bg-slate-800 border border-slate-700"
-        onChange={(e) => setEmail(e.target.value)}
-      />
+        <label>Email</label>
+        <input
+          type="email"
+          className="w-full p-3 rounded bg-gray-800 mb-4"
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
-      <input
-        type="password"
-        placeholder="Password"
-        className="w-full p-2 mb-3 rounded bg-slate-800 border border-slate-700"
-        onChange={(e) => setPassword(e.target.value)}
-      />
+        <label>Password</label>
+        <input
+          type="password"
+          className="w-full p-3 rounded bg-gray-800 mb-4"
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
-      <button
-        onClick={handleSignup}
-        className="w-full bg-blue-600 hover:bg-blue-700 p-2 rounded mt-2"
-      >
-        Sign Up
-      </button>
+        {errorMsg && <p className="text-red-400 mb-3">{errorMsg}</p>}
 
-      {message && <p className="text-red-400 mt-3">{message}</p>}
+        <button
+          onClick={signup}
+          className="w-full py-3 bg-green-500 text-black rounded-xl font-semibold"
+        >
+          Create Account
+        </button>
+
+        <p className="text-center text-gray-400 mt-4">
+          Already have an account?{" "}
+          <a href="/auth/login" className="text-green-400 underline">
+            Login
+          </a>
+        </p>
+      </div>
     </div>
   );
 }
-
