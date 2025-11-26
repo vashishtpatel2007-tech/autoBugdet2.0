@@ -1,0 +1,115 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import Calendar from "react-calendar";
+import "react-calendar/dist/Calendar.css";
+import { supabase } from "@/lib/supabaseClient";
+import Link from "next/link";
+
+// Transaction type
+type Transaction = {
+  id: number;
+  user_id: string;
+  amount: number;
+  category: string;
+  date: string; // yyyy-mm-dd
+};
+
+// Fallback type for react-calendar tile function
+type TileProps = {
+  date: Date;
+  view: string;
+};
+
+export default function CalendarPage() {
+  const [value, setValue] = useState<Date>(new Date());
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [dailyTotal, setDailyTotal] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const user = userData?.user;
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from("transactions")
+        .select("*")
+        .eq("user_id", user.id);
+
+      if (error) {
+        console.log("Calendar Fetch Error:", error);
+        return;
+      }
+
+      const tx = data || [];
+      setTransactions(tx);
+
+      // Calculate day-wise totals
+      const totals: Record<string, number> = {};
+      tx.forEach((t) => {
+        const key = t.date;
+        totals[key] = (totals[key] || 0) + Number(t.amount || 0);
+      });
+
+      setDailyTotal(totals);
+    };
+
+    load();
+  }, []);
+
+  const selectedDateKey = value.toISOString().split("T")[0];
+
+  return (
+    <div className="min-h-screen bg-black text-white p-4">
+      <h1 className="text-xl font-semibold mb-4">📅 Calendar</h1>
+
+      {/* CALENDAR */}
+      <div className="rounded-xl bg-[#1a1d25] p-4 shadow-lg">
+        <Calendar
+          onChange={(d) => setValue(d as Date)}
+          value={value}
+          tileContent={(props: TileProps) => {
+            const key = props.date.toISOString().split("T")[0];
+            const total = dailyTotal[key];
+
+            return total ? (
+              <p className="text-red-400 text-xs font-bold mt-1">₹{total}</p>
+            ) : null;
+          }}
+        />
+      </div>
+
+      {/* Add Expense Button */}
+      <Link
+        href={`/expenses?date=${selectedDateKey}`}
+        className="block mt-6 bg-green-500 hover:bg-green-400 text-black text-center py-3 rounded-xl font-semibold shadow-md"
+      >
+        Add Expense for {value.toDateString()}
+      </Link>
+
+      {/* Daily Transactions */}
+      <div className="mt-6">
+        <h2 className="text-lg font-semibold mb-3">
+          Transactions on {value.toDateString()}
+        </h2>
+
+        {transactions.filter((t) => t.date === selectedDateKey).length === 0 && (
+          <p className="text-gray-400 text-sm">No expenses for this day.</p>
+        )}
+
+        {transactions
+          .filter((t) => t.date === selectedDateKey)
+          .map((t) => (
+            <div
+              key={t.id}
+              className="mt-3 p-4 bg-[#14161d] rounded-lg border border-gray-700"
+            >
+              <p className="font-semibold">{t.category}</p>
+              <p className="text-red-400 font-bold">- ₹{t.amount}</p>
+            </div>
+          ))}
+      </div>
+    </div>
+  );
+}
