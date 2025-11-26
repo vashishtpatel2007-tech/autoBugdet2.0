@@ -2,28 +2,37 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 export default function AddExpensePage() {
-  const params = useSearchParams();
-
-  // Pre-select date if passed from calendar
-  const prefilledDate = params.get("date") || new Date().toISOString().slice(0, 10);
+  // today's date as default (yyyy-mm-dd)
+  const today = new Date().toISOString().slice(0, 10);
 
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("Food");
   const [note, setNote] = useState("");
-  const [date, setDate] = useState(prefilledDate);
+  const [date, setDate] = useState(today);
   const [success, setSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Make sure date is ALWAYS yyyy-mm-dd before saving
+  // ✅ On client, read ?date= from URL and pre-fill the date
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const params = new URLSearchParams(window.location.search);
+    const urlDate = params.get("date");
+
+    if (urlDate) {
+      setDate(urlDate);
+    }
+  }, []);
+
+  // Make sure date is always yyyy-mm-dd
   const normalizeDate = (d: string) => {
     try {
-      return new Date(d).toISOString().slice(0, 10); // CORRECT FORMAT
+      return new Date(d).toISOString().slice(0, 10);
     } catch {
-      return prefilledDate; // fallback
+      return today;
     }
   };
 
@@ -31,7 +40,6 @@ export default function AddExpensePage() {
     setErrorMsg("");
     setSuccess(false);
 
-    // Basic validation
     if (!amount || Number(amount) <= 0) {
       setErrorMsg("Enter a valid amount");
       return;
@@ -57,7 +65,7 @@ export default function AddExpensePage() {
     });
 
     if (error) {
-      console.log(error);
+      console.error(error);
       setErrorMsg("Failed to save expense. Try again.");
       return;
     }
