@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabaseClient";
+const supabase = createClient();
 import {
   ResponsiveContainer,
   LineChart,
@@ -162,6 +163,35 @@ export default function DashboardPage() {
   }));
 
   const PIE_COLORS = [NEON_GREEN, NEON_YELLOW, "#37ffb1", "#51a6ff", "#ff7af6"];
+// Load budget for this user
+const [budget, setBudget] = useState<number | null>(null);
+const [cycle, setCycle] = useState<string>("monthly");
+const [overspendAlertEnabled, setOverspendAlertEnabled] = useState(false);
+
+useEffect(() => {
+  async function loadBudget() {
+    const { data: userData } = await supabase.auth.getUser();
+    const user = userData?.user;
+    if (!user) return;
+
+    const month = new Date().toISOString().slice(0, 7);
+
+    const { data } = await supabase
+      .from("budgets")
+      .select("*")
+      .eq("user_id", user.id)
+      .eq("month", month)
+      .single();
+
+    if (data) {
+      setBudget(data.budget);
+      setCycle(data.cycle);
+      setOverspendAlertEnabled(data.overspend_alert);
+    }
+  }
+
+  loadBudget();
+}, []);
 
   return (
     <div
