@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Navbar from "./components/Navbar";
+
 import AuthProvider from "./providers/AuthProvider";
+
+import Navbar from "./components/Navbar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -19,21 +21,16 @@ export const metadata: Metadata = {
   description: "Personal Budgeting App",
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} bg-slate-900 text-white`}
       >
         <AuthProvider>
-        <Navbar />
-        {children}
+          <Navbar />
+          <main>{children}</main>
         </AuthProvider>
-
       </body>
     </html>
   );

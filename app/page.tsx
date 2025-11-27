@@ -1,9 +1,9 @@
 "use client";
 
-import { useUser } from "@/app/providers/AuthProvider";
+import { useAuth } from "@/app/providers/AuthProvider";
 
 export default function Home() {
-  const { user } = useUser();
+  const { user } = useAuth();
 
   return (
     <main className="min-h-screen bg-slate-900 text-white flex items-center justify-center p-4">

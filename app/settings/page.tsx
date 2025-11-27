@@ -11,7 +11,7 @@ export default function SettingsPage() {
     const { data: userData } = await supabase.auth.getUser();
     if (!userData?.user) return;
 
-    const month = new Date().toISOString().slice(0, 7); // 2025-11
+    const month = new Date().toISOString().slice(0, 7);
 
     await supabase.from("budgets").upsert({
       user_id: userData.user.id,
@@ -42,9 +42,7 @@ export default function SettingsPage() {
         Save Budget
       </button>
 
-      {saved && (
-        <p className="mt-3 text-green-400">Saved!</p>
-      )}
+      {saved && <p className="mt-3 text-green-400">Saved!</p>}
     </div>
   );
 }

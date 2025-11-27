@@ -1,40 +1,67 @@
 "use client";
-
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
-interface UserContextType {
-  user: any | null;
-}
+// USER TYPE
+type UserType = {
+  id: string;
+  email: string;
+} | null;
 
-const UserContext = createContext<UserContextType>({ user: null });
-
-export const useUser = () => useContext(UserContext);
+const AuthContext = createContext<{
+  user: UserType;
+  loading: boolean;
+}>({
+  user: null,
+  loading: true,
+});
 
 export default function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserType>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const getUser = async () => {
+    const loadUser = async () => {
       const { data } = await supabase.auth.getUser();
-      setUser(data.user);
+
+      if (data.user) {
+        setUser({
+          id: data.user.id,
+          email: data.user.email ?? "",
+        });
+      } else {
+        setUser(null);
+      }
+
+      setLoading(false);
     };
 
-    getUser();
+    loadUser();
 
-    // listen for auth changes
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    // Listen for login / logout changes
+    const { data: listener } = supabase.auth.onAuthStateChange((_, session) => {
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email ?? "",
+        });
+      } else {
+        setUser(null);
+      }
     });
 
     return () => {
-      data.subscription.unsubscribe();
+      listener.subscription.unsubscribe();
     };
   }, []);
 
   return (
-    <UserContext.Provider value={{ user }}>
+    <AuthContext.Provider value={{ user, loading }}>
       {children}
-    </UserContext.Provider>
+    </AuthContext.Provider>
   );
+}
+
+export function useAuth() {
+  return useContext(AuthContext);
 }
